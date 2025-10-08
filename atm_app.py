@@ -1,50 +1,66 @@
 import streamlit as st
 
-class ATM:
-    def __init__(self, balance=0):
-        self.balance = balance
 
-    def check_balance(self):
-        return f"Your current balance is: ${self.balance:.2f}"
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'balance' not in st.session_state:
+    st.session_state.balance = 1000.0  
+if 'attempts' not in st.session_state:
+    st.session_state.attempts = 3
+if 'pin' not in st.session_state:
+    st.session_state.pin = "2004"
 
-    def deposit(self, amount):
-        if amount > 0:
-            self.balance += amount
-            return f"${amount:.2f} deposited successfully."
+st.title("💳 ATM System")
+
+
+if not st.session_state.authenticated:
+    st.subheader("🔐 Enter PIN to Access ATM")
+    pin_input = st.text_input("Enter your PIN", type="password")
+
+    if st.button("Login"):
+        if pin_input == st.session_state.pin:
+            st.session_state.authenticated = True
+            st.success("✅ Authentication successful!")
         else:
-            return "Invalid deposit amount."
+            st.session_state.attempts -= 1
+            st.error(f"❌ Incorrect PIN. {st.session_state.attempts} attempt(s) remaining.")
 
-    def withdraw(self, amount):
-        if amount <= 0:
-            return "Invalid withdrawal amount."
-        elif amount > self.balance:
-            return "Insufficient balance."
-        else:
-            self.balance -= amount
-            return f"${amount:.2f} withdrawn successfully."
+            if st.session_state.attempts <= 0:
+                st.error("🚫 Too many failed attempts. Please restart the app.")
+                st.stop()
+else:
+    
+    st.subheader("🏦 ATM Menu")
+
+    option = st.radio("Choose an option:", ("Check Balance", "Deposit", "Withdraw", "mini statement", "Exit"))
+
+    if option == "Check Balance":
+        st.info(f"💰 Your current balance is: ${st.session_state.balance:.2f}")
+
+    elif option == "Deposit":
+        amount = st.number_input("Enter amount to deposit", min_value=100, step=10000)
+        if st.button("Deposit"):
+            st.session_state.balance += amount
+            st.success(f"✅ Deposited ${amount:.2f}")
+            st.info(f"New balance: ${st.session_state.balance:.2f}")
+
+    elif option == "Withdraw":
+        amount = st.number_input("Enter amount to withdraw", min_value=100, step=10000)
+        if st.button("Withdraw"):
+            if amount > st.session_state.balance:
+                st.error("❌ Insufficient funds.")
+            else:
+                st.session_state.balance -= amount
+                st.success(f"✅ Withdrawn ${amount:.2f}")
+                st.info(f"New balance: ${st.session_state.balance:.2f}")
+
+    elif option == "Exit":
+        st.session_state.authenticated = False
+        st.session_state.attempts = 3
+        st.success("✅ You have been logged out. Thank you for using the ATM!")
+        st.success("Have a nice day Mr.Nijanthan")
 
 
-if 'atm' not in st.session_state:
-    st.session_state.atm = ATM(balance=1000)
-
-st.title("🏧 ATM System")
 
 
-option = st.radio("Choose an option:", ["Check Balance", "Deposit", "Withdraw"])
-
-
-if option == "Check Balance":
-    st.success(st.session_state.atm.check_balance())
-
-elif option == "Deposit":
-    amount = st.number_input("Enter amount to deposit:", min_value=0.0, step=10.0, format="%.2f")
-    if st.button("Deposit"):
-        result = st.session_state.atm.deposit(amount)
-        st.info(result)
-
-elif option == "Withdraw":
-    amount = st.number_input("Enter amount to withdraw:", min_value=0.0, step=10.0, format="%.2f")
-    if st.button("Withdraw"):
-        result = st.session_state.atm.withdraw(amount)
-        st.info(result)
 
